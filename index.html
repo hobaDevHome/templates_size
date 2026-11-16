@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>عرض الخلفيات</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  /* A 3:2 box that always covers the screen, so the lines stay glued to the picture */
+  #frame {
+    position: fixed; top: 50%; left: 50%;
+    width: max(100vw, 150vh); height: max(100vh, 66.6667vw);
+    transform: translate(-50%, -50%);
+  }
+  #stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .line {
+    position: absolute; left: 0; right: 0; height: 0;
+    border-top: 2px solid var(--c);
+    filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff);
+    cursor: ns-resize; touch-action: none; z-index: 1;
+  }
+  /* wider grab area */
+  .line::before { content: ""; position: absolute; left: 0; right: 0; top: -9px; height: 18px; }
+  .line span {
+    position: absolute; top: -13px; left: calc(50% - 50vw + 12px);
+    font: 600 13px/1 system-ui, "Segoe UI", Tahoma, sans-serif;
+    background: var(--c); color: #fff; padding: 5px 9px; border-radius: 12px;
+    white-space: nowrap; user-select: none;
+  }
+  #lineImg  { --c: #d81b60; top: 35.75%; }
+  #lineText { --c: #1565c0; top: 59.25%; }
+  body.nolines .line { display: none; }
+
+  #bar {
+    position: fixed; top: 12px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 8px;
+    z-index: 2; pointer-events: none;
+  }
+  #bar button {
+    pointer-events: auto;
+    font: 600 16px/1 system-ui, "Segoe UI", Tahoma, sans-serif;
+    min-width: 44px; height: 44px; padding: 0 16px;
+    border: 2px solid #fff; border-radius: 22px;
+    background: rgba(0,0,0,.55); color: #fff;
+    cursor: pointer;
+  }
+  #bar button:hover { background: rgba(0,0,0,.75); }
+  #bar button[aria-pressed="true"] { background: #fff; color: #111; }
+  #bar button:focus-visible { outline: 3px solid #ffd54a; outline-offset: 2px; }
+  #toggle { margin-inline-start: 12px; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <img id="stage" src="ch1.png" alt="الخلفية 1">
+  <div class="line" id="lineImg"><span>بداية الصور</span></div>
+  <div class="line" id="lineText"><span>بداية النصوص</span></div>
+</div>
+<div id="bar">
+  <button data-src="ch1.png" aria-pressed="true">1</button>
+  <button data-src="ch2.png" aria-pressed="false">2</button>
+  <button data-src="ch3.png" aria-pressed="false">3</button>
+  <button data-src="ch4.png" aria-pressed="false">4</button>
+  <button id="toggle" aria-pressed="true">الخطوط</button>
+</div>
+<script>
+  var stage = document.getElementById('stage');
+  var frame = document.getElementById('frame');
+  var buttons = document.querySelectorAll('#bar button[data-src]');
+  buttons.forEach(function (b) { new Image().src = b.dataset.src; });
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      stage.src = b.dataset.src;
+      stage.alt = 'الخلفية ' + b.textContent;
+      buttons.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+    });
+  });
+
+  var toggle = document.getElementById('toggle');
+  toggle.addEventListener('click', function () {
+    var hidden = document.body.classList.toggle('nolines');
+    toggle.setAttribute('aria-pressed', hidden ? 'false' : 'true');
+  });
+
+  // Drag a line up/down; its place is kept as a percentage of the picture
+  document.querySelectorAll('.line').forEach(function (line) {
+    line.addEventListener('pointerdown', function (e) {
+      line.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    line.addEventListener('pointermove', function (e) {
+      if (!line.hasPointerCapture(e.pointerId)) return;
+      var r = frame.getBoundingClientRect();
+      var pct = (e.clientY - r.top) / r.height * 100;
+      line.style.top = Math.max(0, Math.min(100, pct)) + '%';
+    });
+  });
+</script>
+</body>
+</html>
